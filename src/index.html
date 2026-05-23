@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <script src="script.js" defer></script>
+    <style>
+      canvas#canvas {
+        image-rendering: optimizeSpeed;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: -o-crisp-edges;
+        image-rendering: pixelated;
+        background-color: hsl(0, 0%, 10%);
+        border-color: hsl(0, 0%, 18%);
+        border-style: solid;
+        border-width: 2px;
+      }
+      div.container {
+        display: flex;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body style="background-color: hsl(0, 0%, 10%);">
+    <div class="container" style="padding-top: 6em;">
+      <canvas id="canvas" width="500" height="500"></canvas>
+    </div>
+    <div class="container">
+      <h2 id="score" style="font-family: monospace; color: white;"></h2>
+    </div>
+  </body>
+</html>

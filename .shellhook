@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+alias tidy='tidy -config "$PWD/.tidyrc" -q'
+alias clang-format="clang-format -i"
+alias jshint='jshint --verbose "$PWD/.jshintrc"'
+alias tsc="tsc --noEmit --strict --checkJs --pretty --noImplicitAny false"

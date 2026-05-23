@@ -1,0 +1,24 @@
+IndentWidth: 4
+ColumnLimit: 100
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: true
+AlignConsecutiveMacros: true
+AlignEscapedNewlines: Left
+AlignOperands: false
+AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: None
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Custom
+IndentCaseLabels: false
+IndentPPDirectives: BeforeHash
+BraceWrapping:
+    AfterControlStatement: MultiLine
+JavaScriptQuotes: Double
+JavaScriptWrapImports: true
+PenaltyReturnTypeOnItsOwnLine: 256
+PointerAlignment: Left
+SpacesInContainerLiterals: false
