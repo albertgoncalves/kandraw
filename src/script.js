@@ -45,19 +45,36 @@ function resample(from, to) {
 }
 
 function score(from, to) {
-    if (from.length < to.length) {
-        from = resample(from, to);
-    } else {
-        to = resample(to, from);
+    if (from.length !== to.length) {
+        return Number.POSITIVE_INFINITY;
     }
 
     let error = 0;
 
     for (let i = 0; i < from.length; ++i) {
-        error += distance(from[i], to[i]);
+        if (from[i].length <= 1) {
+            return Number.POSITIVE_INFINITY;
+        }
+
+        let a = [...from[i]];
+        let b = [...to[i]];
+
+        if (a.length < b.length) {
+            a = resample(a, b);
+        } else {
+            b = resample(b, a);
+        }
+
+        let e = 0;
+
+        for (let j = 0; j < a.length; ++j) {
+            e += distance(a[j], b[j]);
+        }
+
+        error = Math.max(error, e / a.length);
     }
 
-    return error / from.length;
+    return error;
 }
 
 function reset(canvas, context) {
@@ -82,23 +99,21 @@ function reset(canvas, context) {
     context.setLineDash([]);
 }
 
-function draw(context, points) {
-    if (points.length === 0) {
-        return;
-    }
-
+function draw(context, lines) {
     const prevStrokeStyle = context.strokeStyle;
 
     context.strokeStyle = "hsl(180, 90%, 50%, 0.15)";
 
-    context.beginPath();
-    context.moveTo(points[0][0], points[0][1]);
+    for (let i = 0; i < lines.length; ++i) {
+        context.beginPath();
+        context.moveTo(lines[i][0][0], lines[i][0][1]);
 
-    for (let i = 1; i < points.length; ++i) {
-        context.lineTo(points[i][0], points[i][1]);
+        for (let j = 1; j < lines[i].length; ++j) {
+            context.lineTo(lines[i][j][0], lines[i][j][1]);
+        }
+
+        context.stroke();
     }
-
-    context.stroke();
 
     context.strokeStyle = prevStrokeStyle;
 }
@@ -110,7 +125,7 @@ window.onload = function() {
 
     const k = Math.max(canvas.width, canvas.height) / 30;
 
-    const answer = [[100, 200], [400, 200], [400, 300]];
+    const answer = [[[100, 200], [400, 200]], [[400, 225], [400, 325]]];
 
     reset(canvas, context);
     draw(context, answer);
@@ -150,9 +165,15 @@ window.onload = function() {
             context.lineTo(x, y);
             context.stroke();
 
-            strokes[strokes.length - 1].push([x, y]);
+            const n = strokes[strokes.length - 1].length;
 
-            const s = score(answer, strokes[strokes.length - 1]) / k;
+            if ((strokes[strokes.length - 1][n - 1][0] !== x) ||
+                (strokes[strokes.length - 1][n - 1][1] !== y))
+            {
+                strokes[strokes.length - 1].push([x, y]);
+            }
+
+            const s = score(strokes, answer) / k;
             h2.textContent = (s < 1 ? "\u2705" : "\u274C") + ` (${s.toFixed(2)})`;
         }
     }, false);
