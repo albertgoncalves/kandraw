@@ -56,8 +56,8 @@ function score(from, to) {
             return Number.POSITIVE_INFINITY;
         }
 
-        let a = [...from[i]];
-        let b = [...to[i]];
+        let a = from[i];
+        let b = to[i];
 
         if (a.length < b.length) {
             a = resample(a, b);
