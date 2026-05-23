@@ -108,6 +108,8 @@ window.onload = function() {
     const context = canvas.getContext("2d");
     const h2 = document.getElementById("score");
 
+    const k = Math.max(canvas.width, canvas.height) / 30;
+
     const answer = [[100, 200], [400, 200], [400, 300]];
 
     reset(canvas, context);
@@ -139,7 +141,7 @@ window.onload = function() {
 
         drawing = false;
 
-        const s = score(answer, strokes[strokes.length - 1]) / 25;
+        const s = score(answer, strokes[strokes.length - 1]) / k;
         h2.textContent = (s < 1 ? "\u2705" : "\u274C") + ` (${s.toFixed(2)})`;
     }, false);
 
