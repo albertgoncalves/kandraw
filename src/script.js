@@ -140,9 +140,6 @@ window.onload = function() {
         context.stroke();
 
         drawing = false;
-
-        const s = score(answer, strokes[strokes.length - 1]) / k;
-        h2.textContent = (s < 1 ? "\u2705" : "\u274C") + ` (${s.toFixed(2)})`;
     }, false);
 
     canvas.addEventListener("mousemove", function(event) {
@@ -154,6 +151,9 @@ window.onload = function() {
             context.stroke();
 
             strokes[strokes.length - 1].push([x, y]);
+
+            const s = score(answer, strokes[strokes.length - 1]) / k;
+            h2.textContent = (s < 1 ? "\u2705" : "\u274C") + ` (${s.toFixed(2)})`;
         }
     }, false);
 
