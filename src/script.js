@@ -27,6 +27,25 @@ function lerp2(a, b, t) {
     return [lerp1(a[0], b[0], t), lerp1(a[1], b[1], t)];
 }
 
+// NOTE: See `https://en.wikipedia.org/wiki/B%C3%A9zier_curve#/media/File:B%C3%A9zier_3_big.svg`.
+function cubicBezier(p0, p1, p2, p3, steps) {
+    const b = [p0];
+
+    for (let i = 1; i < steps; ++i) {
+        const t = i / steps;
+        const q0 = lerp2(p0, p1, t);
+        const q1 = lerp2(p1, p2, t);
+        const q2 = lerp2(p2, p3, t);
+        const r0 = lerp2(q0, q1, t);
+        const r1 = lerp2(q1, q2, t);
+        b.push(lerp2(r0, r1, t));
+    }
+
+    b.push(p3);
+
+    return b;
+}
+
 function resample(from, to) {
     const a = cumulativeDistances(from);
     const b = cumulativeDistances(to);
@@ -125,7 +144,10 @@ window.onload = function() {
 
     const k = Math.max(canvas.width, canvas.height) / 30;
 
-    const answer = [[[100, 200], [400, 200]], [[400, 225], [400, 325]]];
+    const answer = [
+        cubicBezier([100, 300], [50, 100], [250, 100], [350, 350], 50),
+        [[400, 225], [400, 325]],
+    ];
 
     reset(canvas, context);
     draw(context, answer);
