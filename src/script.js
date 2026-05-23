@@ -162,19 +162,19 @@ window.onload = function() {
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
 
-            context.lineTo(x, y);
-            context.stroke();
-
             const n = strokes[strokes.length - 1].length;
 
             if ((strokes[strokes.length - 1][n - 1][0] !== x) ||
                 (strokes[strokes.length - 1][n - 1][1] !== y))
             {
-                strokes[strokes.length - 1].push([x, y]);
-            }
+                context.lineTo(x, y);
+                context.stroke();
 
-            const s = score(strokes, answer) / k;
-            h2.textContent = (s < 1 ? "\u2705" : "\u274C") + ` (${s.toFixed(2)})`;
+                strokes[strokes.length - 1].push([x, y]);
+
+                const s = score(strokes, answer) / k;
+                h2.textContent = (s < 1 ? "\u2705" : "\u274C") + ` (${s.toFixed(2)})`;
+            }
         }
     }, false);
 
