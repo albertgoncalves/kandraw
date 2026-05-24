@@ -123,10 +123,12 @@ function reset(canvas, context) {
 function draw(context, lines) {
     const prevStrokeStyle = context.strokeStyle;
 
-    context.strokeStyle = "hsl(180, 90%, 50%, 0.15)";
+    context.strokeStyle = "hsl(180, 90%, 50%, 0.25)";
+
+    const offset = 10;
 
     for (let i = 0; i < lines.length; ++i) {
-        context.fillText((i + 1).toString(), lines[i][0][0], lines[i][0][1]);
+        context.fillText((i + 1).toString(), lines[i][0][0] - offset, lines[i][0][1] - offset);
 
         context.beginPath();
         context.moveTo(lines[i][0][0], lines[i][0][1]);
