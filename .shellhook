@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+if [ ! -f ./kanjivg-20250816-stripped.zip ]; then
+    wget 'https://github.com/KanjiVG/kanjivg/releases/download/r20250816/kanjivg-20250816-stripped.zip'
+    mkdir -p ./src/static/svg/
+    unzip -d ./src/static/svg/ ./kanjivg-20250816-stripped.zip
+fi
+
 alias tidy='tidy -config "$PWD/.tidyrc" -q'
 alias clang-format="clang-format -i"
 alias jshint='jshint --verbose "$PWD/.jshintrc"'

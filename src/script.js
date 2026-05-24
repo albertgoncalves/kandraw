@@ -239,7 +239,7 @@ window.onload = function() {
     const canvasScale = Math.min(canvas.width, canvas.height);
     const scoreScale = Math.max(canvas.width, canvas.height) / 20;
 
-    const svg = document.getElementById("kanji-svg");
+    const svg = document.getElementById("kanji-svg").contentDocument.children[0];
     const answer = parse(svg);
     for (let i = 0; i < answer.length; ++i) {
         for (let j = 0; j < answer[i].length; ++j) {
