@@ -156,28 +156,26 @@ function parse(svg) {
             let i = 0;
             let j = 0;
 
+            const pushIf = function() {
+                if (i !== j) {
+                    tokens.push(d.slice(i, j));
+                }
+            };
+
             for (; j < d.length; ++j) {
-                if ("MmCcSs".includes(d[j])) {
-                    if (i !== j) {
-                        tokens.push(d.slice(i, j));
-                    }
+                if ("MCc".includes(d[j])) {
+                    pushIf();
                     tokens.push(d[j]);
                     i = j + 1;
                 } else if (" ,".includes(d[j])) {
-                    if (i !== j) {
-                        tokens.push(d.slice(i, j));
-                    }
+                    pushIf();
                     i = j + 1;
                 } else if (d[j] === "-") {
-                    if (i !== j) {
-                        tokens.push(d.slice(i, j));
-                    }
+                    pushIf();
                     i = j;
                 }
             }
-            if (i !== j) {
-                tokens.push(d.slice(i, j));
-            }
+            pushIf();
         }
 
         const points = [];
