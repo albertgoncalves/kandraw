@@ -65,14 +65,14 @@ function resample(from, to) {
 
 function score(from, to) {
     if (from.length !== to.length) {
-        return Number.POSITIVE_INFINITY;
+        return Infinity;
     }
 
     let error = 0;
 
     for (let i = 0; i < from.length; ++i) {
         if (from[i].length <= 1) {
-            return Number.POSITIVE_INFINITY;
+            return Infinity;
         }
 
         let a = from[i];
