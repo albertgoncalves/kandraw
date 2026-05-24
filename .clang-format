@@ -21,4 +21,5 @@ JavaScriptQuotes: Double
 JavaScriptWrapImports: true
 PenaltyReturnTypeOnItsOwnLine: 256
 PointerAlignment: Left
+ReflowComments: Never
 SpacesInContainerLiterals: false

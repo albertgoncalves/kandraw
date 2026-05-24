@@ -100,7 +100,11 @@ function reset(canvas, context) {
     context.lineCap = "butt";
     context.lineWidth = 2;
     context.strokeStyle = "hsl(0, 0%, 18%)";
+    context.fillStyle = "hsl(0, 0%, 75%)";
     context.setLineDash([5, 5]);
+    context.font = "16px monospace";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
 
     context.beginPath();
 
@@ -124,6 +128,8 @@ function draw(context, lines) {
     context.strokeStyle = "hsl(180, 90%, 50%, 0.15)";
 
     for (let i = 0; i < lines.length; ++i) {
+        context.fillText((i + 1).toString(), lines[i][0][0], lines[i][0][1]);
+
         context.beginPath();
         context.moveTo(lines[i][0][0], lines[i][0][1]);
 
@@ -137,17 +143,88 @@ function draw(context, lines) {
     context.strokeStyle = prevStrokeStyle;
 }
 
+// NOTE: See `https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/d#cubic_b%C3%A9zier_curve`.
+function parse(svg) {
+    const lines = [];
+
+    for (let path of svg.getElementsByTagName("path")) {
+        const d = path.getAttribute("d");
+
+        const tokens = [];
+        let   i = 0;
+        let   j = 0;
+
+        for (; j < d.length; ++j) {
+            if ("MmCcSs".includes(d[j])) {
+                if (i !== j) {
+                    tokens.push(d.slice(i, j));
+                }
+                tokens.push(d[j]);
+                i = j + 1;
+            } else if (d[j] === ",") {
+                if (i !== j) {
+                    tokens.push(d.slice(i, j));
+                }
+                i = j + 1;
+            } else if (d[j] === "-") {
+                if (i !== j) {
+                    tokens.push(d.slice(i, j));
+                }
+                i = j;
+            }
+        }
+        if (i !== j) {
+            tokens.push(d.slice(i, j));
+        }
+
+        const points = [];
+
+        for (let i = 0; i < tokens.length;) {
+            if (tokens[i] === "M") {
+                points.push([Number(tokens[i + 1]), Number(tokens[i + 2])]);
+                i += 3;
+            } else if (tokens[i] === "C") {
+                const point = points[points.length - 1];
+                points.push(...cubicBezier([...point],
+                                           [Number(tokens[i + 1]), Number(tokens[i + 2])],
+                                           [Number(tokens[i + 3]), Number(tokens[i + 4])],
+                                           [Number(tokens[i + 5]), Number(tokens[i + 6])]));
+                i += 7;
+            } else if (tokens[i] === "c") {
+                const point = points[points.length - 1];
+                points.push(...cubicBezier(
+                    [...point],
+                    [point[0] + Number(tokens[i + 1]), point[1] + Number(tokens[i + 2])],
+                    [point[0] + Number(tokens[i + 3]), point[1] + Number(tokens[i + 4])],
+                    [point[0] + Number(tokens[i + 5]), point[1] + Number(tokens[i + 6])]));
+                i += 7;
+            } else {
+                throw new Error(tokens[i]);
+            }
+        }
+
+        lines.push(points);
+    }
+
+    return lines;
+}
+
 window.onload = function() {
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
     const h2 = document.getElementById("score");
 
-    const k = Math.max(canvas.width, canvas.height) / 30;
+    const canvasScale = Math.min(canvas.width, canvas.height);
+    const scoreScale = Math.max(canvas.width, canvas.height) / 20;
 
-    const answer = [
-        cubicBezier([100, 300], [50, 100], [250, 100], [350, 350], 50),
-        [[400, 225], [400, 325]],
-    ];
+    const svg = document.getElementById("kanji-svg");
+    const answer = parse(svg);
+    for (let i = 0; i < answer.length; ++i) {
+        for (let j = 0; j < answer[i].length; ++j) {
+            answer[i][j][0] = (answer[i][j][0] / svg.getAttribute("width")) * canvasScale;
+            answer[i][j][1] = (answer[i][j][1] / svg.getAttribute("height")) * canvasScale;
+        }
+    }
 
     reset(canvas, context);
     draw(context, answer);
@@ -194,7 +271,7 @@ window.onload = function() {
 
                 strokes[strokes.length - 1].push([x, y]);
 
-                const s = score(strokes, answer) / k;
+                const s = score(strokes, answer) / scoreScale;
                 h2.textContent = (s < 1 ? "\u2705" : "\u274C") + ` (${s.toFixed(2)})`;
             }
         }
