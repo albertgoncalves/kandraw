@@ -98,13 +98,10 @@ function score(from, to) {
 
 function reset(canvas, context) {
     context.lineCap = "butt";
+    context.lineJoin = "miter";
     context.lineWidth = 2;
     context.strokeStyle = "hsl(0, 0%, 18%)";
-    context.fillStyle = "hsl(0, 0%, 75%)";
     context.setLineDash([5, 5]);
-    context.font = "16px monospace";
-    context.textAlign = "center";
-    context.textBaseline = "middle";
 
     context.beginPath();
 
@@ -117,6 +114,7 @@ function reset(canvas, context) {
     context.stroke();
 
     context.lineCap = "round";
+    context.lineJoin = "round";
     context.lineWidth = 5;
     context.strokeStyle = "hsl(0, 0%, 90%)";
     context.setLineDash([]);
@@ -213,6 +211,11 @@ window.onload = function() {
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
     const h2 = document.getElementById("score");
+
+    context.font = "16px monospace";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = "hsl(0, 0%, 75%)";
 
     const canvasScale = Math.min(canvas.width, canvas.height);
     const scoreScale = Math.max(canvas.width, canvas.height) / 20;
