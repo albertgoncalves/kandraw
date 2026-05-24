@@ -149,55 +149,74 @@ function parse(svg) {
         const d = path.getAttribute("d");
 
         const tokens = [];
-        let   i = 0;
-        let   j = 0;
 
-        for (; j < d.length; ++j) {
-            if ("MmCcSs".includes(d[j])) {
-                if (i !== j) {
-                    tokens.push(d.slice(i, j));
+        {
+            let i = 0;
+            let j = 0;
+
+            for (; j < d.length; ++j) {
+                if ("MmCcSs".includes(d[j])) {
+                    if (i !== j) {
+                        tokens.push(d.slice(i, j));
+                    }
+                    tokens.push(d[j]);
+                    i = j + 1;
+                } else if (" ,".includes(d[j])) {
+                    if (i !== j) {
+                        tokens.push(d.slice(i, j));
+                    }
+                    i = j + 1;
+                } else if (d[j] === "-") {
+                    if (i !== j) {
+                        tokens.push(d.slice(i, j));
+                    }
+                    i = j;
                 }
-                tokens.push(d[j]);
-                i = j + 1;
-            } else if (d[j] === ",") {
-                if (i !== j) {
-                    tokens.push(d.slice(i, j));
-                }
-                i = j + 1;
-            } else if (d[j] === "-") {
-                if (i !== j) {
-                    tokens.push(d.slice(i, j));
-                }
-                i = j;
             }
-        }
-        if (i !== j) {
-            tokens.push(d.slice(i, j));
+            if (i !== j) {
+                tokens.push(d.slice(i, j));
+            }
         }
 
         const points = [];
 
-        for (let i = 0; i < tokens.length;) {
-            if (tokens[i] === "M") {
-                points.push([Number(tokens[i + 1]), Number(tokens[i + 2])]);
-                i += 3;
-            } else if (tokens[i] === "C") {
-                const point = points[points.length - 1];
-                points.push(...cubicBezier([...point],
-                                           [Number(tokens[i + 1]), Number(tokens[i + 2])],
-                                           [Number(tokens[i + 3]), Number(tokens[i + 4])],
-                                           [Number(tokens[i + 5]), Number(tokens[i + 6])]));
-                i += 7;
-            } else if (tokens[i] === "c") {
-                const point = points[points.length - 1];
-                points.push(...cubicBezier(
-                    [...point],
-                    [point[0] + Number(tokens[i + 1]), point[1] + Number(tokens[i + 2])],
-                    [point[0] + Number(tokens[i + 3]), point[1] + Number(tokens[i + 4])],
-                    [point[0] + Number(tokens[i + 5]), point[1] + Number(tokens[i + 6])]));
-                i += 7;
-            } else {
-                throw new Error(tokens[i]);
+        {
+            let i = 0;
+            let prevToken = null;
+
+            const parsers = {
+                M: function() {
+                    points.push([Number(tokens[i + 0]), Number(tokens[i + 1])]);
+                    i += 2;
+                },
+                C: function() {
+                    const point = points.pop();
+                    points.push(...cubicBezier([...point],
+                                               [Number(tokens[i + 0]), Number(tokens[i + 1])],
+                                               [Number(tokens[i + 2]), Number(tokens[i + 3])],
+                                               [Number(tokens[i + 4]), Number(tokens[i + 5])]));
+                    i += 6;
+                },
+                c: function() {
+                    const point = points.pop();
+                    points.push(...cubicBezier(
+                        [...point],
+                        [point[0] + Number(tokens[i + 0]), point[1] + Number(tokens[i + 1])],
+                        [point[0] + Number(tokens[i + 2]), point[1] + Number(tokens[i + 3])],
+                        [point[0] + Number(tokens[i + 4]), point[1] + Number(tokens[i + 5])]));
+                    i += 6;
+                },
+            };
+
+            for (; i < tokens.length;) {
+                if ("MCc".includes(tokens[i])) {
+                    prevToken = tokens[i];
+                    parsers[tokens[i++]]();
+                } else if (prevToken !== null) {
+                    parsers[prevToken]();
+                } else {
+                    throw new Error(tokens[i]);
+                }
             }
         }
 
