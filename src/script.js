@@ -28,8 +28,10 @@ function lerp2(a, b, t) {
 }
 
 // NOTE: See `https://en.wikipedia.org/wiki/B%C3%A9zier_curve#/media/File:B%C3%A9zier_3_big.svg`.
-function cubicBezier(p0, p1, p2, p3, steps) {
+function cubicBezier(p0, p1, p2, p3) {
     const b = [p0];
+
+    const steps = 10;
 
     for (let i = 1; i < steps; ++i) {
         const t = i / steps;
