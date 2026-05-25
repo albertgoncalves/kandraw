@@ -123,12 +123,17 @@ function reset(canvas, context) {
 function draw(context, lines) {
     const prevStrokeStyle = context.strokeStyle;
 
-    context.strokeStyle = "hsl(180, 90%, 50%, 0.25)";
+    // NOTE: See `https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/`.
+    let   h = 0;
+    const goldenRatio = (((Math.sqrt(5) + 1) / 2) % 1) * 360;
 
-    const offset = 10;
+    const offset = 0;
 
     for (let i = 0; i < lines.length; ++i) {
-        context.fillText((i + 1).toString(), lines[i][0][0] - offset, lines[i][0][1] - offset);
+        h = (h + goldenRatio) % 360;
+
+        context.fillStyle = `hsl(${h}, 90%, 75%)`;
+        context.strokeStyle = `hsl(${h}, 90%, 40%, 0.75)`;
 
         context.beginPath();
         context.moveTo(lines[i][0][0], lines[i][0][1]);
@@ -138,6 +143,8 @@ function draw(context, lines) {
         }
 
         context.stroke();
+
+        context.fillText((i + 1).toString(), lines[i][0][0] - offset, lines[i][0][1] - offset);
     }
 
     context.strokeStyle = prevStrokeStyle;
@@ -234,10 +241,9 @@ window.onload = function() {
     context.font = "16px monospace";
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.fillStyle = "hsl(0, 0%, 75%)";
 
     const canvasScale = Math.min(canvas.width, canvas.height);
-    const scoreScale = Math.max(canvas.width, canvas.height) / 20;
+    const scoreScale = Math.max(canvas.width, canvas.height) / 15;
 
     const svg = document.getElementById("kanji-svg").contentDocument.children[0];
     const answer = parse(svg);
