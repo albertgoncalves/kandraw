@@ -97,6 +97,9 @@ function score(from, to) {
 }
 
 function reset(canvas, context) {
+    const halfWidth = canvas.width / 2;
+    const halfHeight = canvas.height / 2;
+
     context.lineCap = "butt";
     context.lineJoin = "miter";
     context.lineWidth = 2;
@@ -105,11 +108,37 @@ function reset(canvas, context) {
 
     context.beginPath();
 
-    context.moveTo(0, canvas.height / 2);
-    context.lineTo(canvas.width, canvas.height / 2);
+    context.moveTo(0, halfHeight);
+    context.lineTo(canvas.width, halfHeight);
 
-    context.moveTo(canvas.width / 2, 0);
-    context.lineTo(canvas.width / 2, canvas.height);
+    context.moveTo(halfWidth, 0);
+    context.lineTo(halfWidth, canvas.height);
+
+    context.stroke();
+
+    const quarterWidth = canvas.width / 4;
+    const quarterHeight = canvas.height / 4;
+
+    const threeQuarterWidth = canvas.width * (3 / 4);
+    const threeQuarterHeight = canvas.height * (3 / 4);
+
+    context.lineWidth = 1;
+    context.strokeStyle = "hsl(0, 0%, 18%, 0.75)";
+    context.setLineDash([3, 3]);
+
+    context.beginPath();
+
+    context.moveTo(0, quarterHeight);
+    context.lineTo(canvas.width, quarterHeight);
+
+    context.moveTo(0, threeQuarterHeight);
+    context.lineTo(canvas.width, threeQuarterHeight);
+
+    context.moveTo(quarterWidth, 0);
+    context.lineTo(quarterWidth, canvas.height);
+
+    context.moveTo(threeQuarterWidth, 0);
+    context.lineTo(threeQuarterWidth, canvas.height);
 
     context.stroke();
 
@@ -120,7 +149,7 @@ function reset(canvas, context) {
     context.setLineDash([]);
 }
 
-function draw(context, lines) {
+function draw(context, lines, k) {
     const prevStrokeStyle = context.strokeStyle;
 
     // NOTE: See `https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/`.
@@ -129,11 +158,14 @@ function draw(context, lines) {
 
     const offset = 0;
 
+    const alphaFill = Math.floor((0.9 / (k + 1)) * 4) / 4;
+    const alphaStroke = (alphaFill / 0.9) * 0.75;
+
     for (let i = 0; i < lines.length; ++i) {
         h = (h + goldenRatio) % 360;
 
-        context.fillStyle = `hsl(${h}, 90%, 75%)`;
-        context.strokeStyle = `hsl(${h}, 90%, 40%, 0.75)`;
+        context.fillStyle = `hsl(${h}, 90%, 75%, ${alphaFill})`;
+        context.strokeStyle = `hsl(${h}, 90%, 40%, ${alphaStroke})`;
 
         context.beginPath();
         context.moveTo(lines[i][0][0], lines[i][0][1]);
@@ -246,6 +278,12 @@ window.onload = function() {
     const scoreScale = Math.max(canvas.width, canvas.height) / 15;
 
     const svg = document.getElementById("kanji-svg").contentDocument.children[0];
+    const kanji = svg.children[0].children[0].getAttribute("kvg:element");
+    if (kanji === "干") {
+        document.getElementById("prompt").textContent = "sêco, ressecar";
+    } else if (kanji === "年") {
+        document.getElementById("prompt").textContent = "ano";
+    }
     const answer = parse(svg);
     for (let i = 0; i < answer.length; ++i) {
         for (let j = 0; j < answer[i].length; ++j) {
@@ -254,8 +292,10 @@ window.onload = function() {
         }
     }
 
+    let k = 0;
+
     reset(canvas, context);
-    draw(context, answer);
+    draw(context, answer, k);
 
     const rect = canvas.getBoundingClientRect();
 
@@ -282,6 +322,22 @@ window.onload = function() {
         context.stroke();
 
         drawing = false;
+
+        if (strokes.length === answer.length) {
+            const s = score(strokes, answer) / scoreScale;
+            if (s < 1) {
+                h2.textContent = `${kanji} \u2705 (${s.toFixed(2)})`;
+                ++k;
+            } else {
+                h2.textContent = `${kanji} \u274C (${s.toFixed(2)})`;
+                k = 0;
+            }
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            reset(canvas, context);
+            draw(context, answer, k);
+            strokes.length = 0;
+        }
     }, false);
 
     canvas.addEventListener("mousemove", function(event) {
@@ -298,9 +354,6 @@ window.onload = function() {
                 context.stroke();
 
                 strokes[strokes.length - 1].push([x, y]);
-
-                const s = score(strokes, answer) / scoreScale;
-                h2.textContent = (s < 1 ? "\u2705" : "\u274C") + ` (${s.toFixed(2)})`;
             }
         }
     }, false);
@@ -314,7 +367,7 @@ window.onload = function() {
             context.clearRect(0, 0, canvas.width, canvas.height);
             h2.textContent = "";
             reset(canvas, context);
-            draw(context, answer);
+            draw(context, answer, k);
             strokes.length = 0;
         }
     }, true);
