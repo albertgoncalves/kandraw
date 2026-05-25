@@ -158,7 +158,7 @@ function draw(context, lines, k) {
 
     const offset = 0;
 
-    const alphaFill = Math.floor((0.9 / (k + 1)) * 4) / 4;
+    const alphaFill = Math.max(0, 0.9 - (k * 0.25));
     const alphaStroke = (alphaFill / 0.9) * 0.75;
 
     for (let i = 0; i < lines.length; ++i) {
@@ -330,7 +330,7 @@ window.onload = function() {
                 ++k;
             } else {
                 h2.textContent = `${kanji} \u274C (${s.toFixed(2)})`;
-                k = 0;
+                k = Math.max(0, Math.min(4, k - 1));
             }
 
             context.clearRect(0, 0, canvas.width, canvas.height);
