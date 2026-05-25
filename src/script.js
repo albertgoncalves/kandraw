@@ -125,7 +125,6 @@ function reset(canvas, context) {
     const threeQuarterHeight = canvas.height * (3 / 4);
 
     context.lineWidth = 1;
-    context.strokeStyle = "hsl(0, 0%, 18%, 0.75)";
     context.setLineDash([3, 3]);
 
     context.beginPath();
@@ -277,7 +276,7 @@ window.onload = function() {
     context.textBaseline = "middle";
 
     const canvasScale = Math.min(canvas.width, canvas.height);
-    const scoreScale = Math.max(canvas.width, canvas.height) / 15;
+    const scoreScale = Math.max(canvas.width, canvas.height) / 10;
 
     const svg = document.getElementById("kanji-svg").contentDocument.children[0];
     const kanji = svg.children[0].children[0].getAttribute("kvg:element");
@@ -285,6 +284,15 @@ window.onload = function() {
         document.getElementById("prompt").textContent = "sêco, ressecar";
     } else if (kanji === "年") {
         document.getElementById("prompt").textContent = "ano";
+    } else if (kanji === "乙") {
+        document.getElementById("prompt").textContent = "o último, duplicar, engenhoso, estranho";
+    } else if (kanji === "雨") {
+        document.getElementById("prompt").textContent = "chuva";
+    } else if (kanji === "折") {
+        document.getElementById("prompt").textContent =
+            "dobrar, quebrar, fraturar, curvar, produto, submeter";
+    } else if (kanji === "書") {
+        document.getElementById("prompt").textContent = "escrever";
     }
     const answer = parse(svg);
     for (let i = 0; i < answer.length; ++i) {
