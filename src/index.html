@@ -4,24 +4,11 @@
     <meta charset="UTF-8">
     <title></title>
     <script src="script.js" defer></script>
-    <style>
-      canvas#canvas {
-        image-rendering: optimizeSpeed;
-        image-rendering: -moz-crisp-edges;
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: -o-crisp-edges;
-        image-rendering: pixelated;
-        background-color: hsl(0, 0%, 5%);
-        border-color: hsl(0, 0%, 18%);
-        border-style: solid;
-        border-width: 2px;
-      }
-    </style>
     <link rel="shortcut icon" href="#">
   </head>
   <body style="background-color: hsl(0, 0%, 5%); font-family: monospace; color: white;">
     <div style="display: flex; justify-content: center; padding-top: 6em;">
-      <canvas id="canvas" width="200" height="200"></canvas>
+      <canvas id="canvas" width="200" height="200" style="border-color: hsl(0, 0%, 18%); border-style: solid; border-width: 2px;"></canvas>
     </div>
     <div style="text-align: center;">
       <h1 id="prompt"></h1>
