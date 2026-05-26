@@ -198,6 +198,7 @@ window.onload = function() {
 
     const svg = document.getElementById("kanji-svg").contentDocument.children[0];
     const kanji = svg.children[0].children[0].getAttribute("kvg:element");
+
     if (kanji === "干") {
         document.getElementById("prompt").textContent = "sêco, ressecar";
     } else if (kanji === "年") {
@@ -212,6 +213,7 @@ window.onload = function() {
     } else if (kanji === "書") {
         document.getElementById("prompt").textContent = "escrever";
     }
+
     const answer = toPoints(svg, canvasScale);
 
     let k = 0;
