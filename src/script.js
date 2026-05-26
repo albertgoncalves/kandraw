@@ -24,27 +24,6 @@ function lerp2(a, b, t) {
     return [lerp1(a[0], b[0], t), lerp1(a[1], b[1], t)];
 }
 
-// NOTE: See `https://en.wikipedia.org/wiki/B%C3%A9zier_curve#/media/File:B%C3%A9zier_3_big.svg`.
-function cubicBezier(p0, p1, p2, p3) {
-    const b = [p0];
-
-    const steps = 10;
-
-    for (let i = 1; i < steps; ++i) {
-        const t = i / steps;
-        const q0 = lerp2(p0, p1, t);
-        const q1 = lerp2(p1, p2, t);
-        const q2 = lerp2(p2, p3, t);
-        const r0 = lerp2(q0, q1, t);
-        const r1 = lerp2(q1, q2, t);
-        b.push(lerp2(r0, r1, t));
-    }
-
-    b.push(p3);
-
-    return b;
-}
-
 function resample(from, to) {
     const a = cumulativeDistances(from);
     const b = cumulativeDistances(to);
@@ -180,81 +159,23 @@ function draw(context, lines, k) {
     context.strokeStyle = prevStrokeStyle;
 }
 
-// NOTE: See `https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/d#cubic_b%C3%A9zier_curve`.
-function parse(svg) {
+function toPoints(svg, scale) {
     const lines = [];
 
     for (let path of svg.getElementsByTagName("path")) {
-        const d = path.getAttribute("d");
-
-        const tokens = [];
-
-        {
-            let i = 0;
-            let j = 0;
-
-            const pushIf = function() {
-                if (i !== j) {
-                    tokens.push(d.slice(i, j));
-                }
-            };
-
-            for (; j < d.length; ++j) {
-                if ("MCc".includes(d[j])) {
-                    pushIf();
-                    tokens.push(d[j]);
-                    i = j + 1;
-                } else if (" ,".includes(d[j])) {
-                    pushIf();
-                    i = j + 1;
-                } else if (d[j] === "-") {
-                    pushIf();
-                    i = j;
-                }
-            }
-            pushIf();
-        }
-
         const points = [];
 
-        {
-            let i = 0;
-            let prevToken = null;
+        // NOTE: See `https://developer.mozilla.org/en-US/docs/Web/API/SVGPathElement/getTotalLength`.
+        const n = path.getTotalLength();
+        const m = Math.ceil(n);
 
-            const parsers = {
-                M: function() {
-                    points.push([Number(tokens[i + 0]), Number(tokens[i + 1])]);
-                    i += 2;
-                },
-                C: function() {
-                    const point = points.pop();
-                    points.push(...cubicBezier([...point],
-                                               [Number(tokens[i + 0]), Number(tokens[i + 1])],
-                                               [Number(tokens[i + 2]), Number(tokens[i + 3])],
-                                               [Number(tokens[i + 4]), Number(tokens[i + 5])]));
-                    i += 6;
-                },
-                c: function() {
-                    const point = points.pop();
-                    points.push(...cubicBezier(
-                        [...point],
-                        [point[0] + Number(tokens[i + 0]), point[1] + Number(tokens[i + 1])],
-                        [point[0] + Number(tokens[i + 2]), point[1] + Number(tokens[i + 3])],
-                        [point[0] + Number(tokens[i + 4]), point[1] + Number(tokens[i + 5])]));
-                    i += 6;
-                },
-            };
-
-            for (; i < tokens.length;) {
-                if ("MCc".includes(tokens[i])) {
-                    prevToken = tokens[i];
-                    parsers[tokens[i++]]();
-                } else if (prevToken !== null) {
-                    parsers[prevToken]();
-                } else {
-                    throw new Error(tokens[i]);
-                }
-            }
+        for (let i = 0; i <= m; ++i) {
+            // NOTE: See `https://developer.mozilla.org/en-US/docs/Web/API/SVGPathElement/getPointAtLength`.
+            const point = path.getPointAtLength((i / m) * n);
+            points.push([
+                (point.x / svg.getAttribute("width")) * scale,
+                (point.y / svg.getAttribute("height")) * scale,
+            ]);
         }
 
         lines.push(points);
@@ -291,13 +212,7 @@ window.onload = function() {
     } else if (kanji === "書") {
         document.getElementById("prompt").textContent = "escrever";
     }
-    const answer = parse(svg);
-    for (let i = 0; i < answer.length; ++i) {
-        for (let j = 0; j < answer[i].length; ++j) {
-            answer[i][j][0] = (answer[i][j][0] / svg.getAttribute("width")) * canvasScale;
-            answer[i][j][1] = (answer[i][j][1] / svg.getAttribute("height")) * canvasScale;
-        }
-    }
+    const answer = toPoints(svg, canvasScale);
 
     let k = 0;
 
