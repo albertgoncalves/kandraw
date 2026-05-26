@@ -2,7 +2,7 @@
     "browser": true,
     "curly": true,
     "eqeqeq": true,
-    "esversion": 6,
+    "esversion": 7,
     "freeze": true,
     "leanswitch": true,
     "nocomma": true,
