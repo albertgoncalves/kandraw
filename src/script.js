@@ -196,22 +196,26 @@ window.onload = function() {
     const canvasScale = Math.min(canvas.width, canvas.height);
     const scoreScale = Math.max(canvas.width, canvas.height) / 10;
 
-    const svg = document.getElementById("kanji-svg").contentDocument.children[0];
-    const kanji = svg.children[0].children[0].getAttribute("kvg:element");
+    const svg = document.getElementById("svg").contentDocument.children[0];
+    const character = svg.children[0].children[0].getAttribute("kvg:element");
 
-    if (kanji === "干") {
+    if (character === "干") {
         document.getElementById("prompt").textContent = "sêco, ressecar";
-    } else if (kanji === "年") {
+    } else if (character === "年") {
         document.getElementById("prompt").textContent = "ano";
-    } else if (kanji === "乙") {
+    } else if (character === "乙") {
         document.getElementById("prompt").textContent = "o último, duplicar, engenhoso, estranho";
-    } else if (kanji === "雨") {
+    } else if (character === "雨") {
         document.getElementById("prompt").textContent = "chuva";
-    } else if (kanji === "折") {
+    } else if (character === "折") {
         document.getElementById("prompt").textContent =
             "dobrar, quebrar, fraturar, curvar, produto, submeter";
-    } else if (kanji === "書") {
+    } else if (character === "書") {
         document.getElementById("prompt").textContent = "escrever";
+    } else if (character === "そ") {
+        document.getElementById("prompt").textContent = "\"so\" (hiragana)";
+    } else if (character === "ざ") {
+        document.getElementById("prompt").textContent = "\"za\" (hiragana)";
     }
 
     const answer = toPoints(svg, canvasScale);
@@ -250,10 +254,10 @@ window.onload = function() {
         if (strokes.length === answer.length) {
             const s = score(strokes, answer) / scoreScale;
             if (s < 1) {
-                h2.textContent = `${kanji} \u2705 (${s.toFixed(2)})`;
+                h2.textContent = `${character} \u2705 (${s.toFixed(2)})`;
                 ++k;
             } else {
-                h2.textContent = `${kanji} \u274C (${s.toFixed(2)})`;
+                h2.textContent = `${character} \u274C (${s.toFixed(2)})`;
                 k = Math.max(0, Math.min(4, k - 1));
             }
 
