@@ -47,7 +47,7 @@ def index():
 def next():
     body = flask.request.get_json()
 
-    if body["correct"] is not None:
+    if body["character"] is not None:
         key = body["character"]
         if body["correct"]:
             DATA[key]["consec"] += 1
@@ -79,8 +79,11 @@ def next():
     ]
     # fmt: on
 
-    (hiragana, prompt) = random.choice(choices)
-    katakana = KAKASI.convert(hiragana)[0]["kana"]
+    while True:
+        (hiragana, prompt) = random.choice(choices)
+        katakana = KAKASI.convert(hiragana)[0]["kana"]
+        if (body["character"] is None) or (katakana != body["character"]):
+            break
 
     return {
         **{

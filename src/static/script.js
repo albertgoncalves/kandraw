@@ -199,7 +199,7 @@ window.onload = function() {
     const scoreScale = Math.max(canvas.width, canvas.height) / 10;
 
     let answer = [];
-    let character = "";
+    let character = null;
     let prompt = "";
     let consec = 0;
 
