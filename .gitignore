@@ -10,5 +10,10 @@
 !.tidyrc
 
 !src/
-!src/*.html
-!src/*.js
+!src/*.py
+
+!src/static/
+!src/static/*.js
+
+!src/templates/
+!src/templates/*.html

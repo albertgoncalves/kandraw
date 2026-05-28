@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+set -eu
+
 if [ ! -f ./kanjivg-20250816-main.zip ]; then
     wget 'https://github.com/KanjiVG/kanjivg/releases/download/r20250816/kanjivg-20250816-main.zip'
-    mkdir -p ./src/static/svg/
-    unzip -d ./src/static/svg/ ./kanjivg-20250816-main.zip
+    mkdir -p ./svg/
+    unzip -d ./svg/ ./kanjivg-20250816-main.zip
 fi
+
+set +eu
 
 alias tidy='tidy -config "$PWD/.tidyrc" -q'
 alias clang-format="clang-format -i"

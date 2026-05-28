@@ -74,7 +74,9 @@ function score(from, to) {
     return error;
 }
 
-function reset(canvas, context) {
+function reset(canvas, context, lines, consec, h1, prompt) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
     const halfWidth = canvas.width / 2;
     const halfHeight = canvas.height / 2;
 
@@ -122,12 +124,7 @@ function reset(canvas, context) {
     context.lineCap = "round";
     context.lineJoin = "round";
     context.lineWidth = 5;
-    context.strokeStyle = "hsl(0, 0%, 90%)";
     context.setLineDash([]);
-}
-
-function draw(context, lines, k) {
-    const prevStrokeStyle = context.strokeStyle;
 
     // NOTE: See `https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/`.
     let   h = 0;
@@ -135,7 +132,7 @@ function draw(context, lines, k) {
 
     const offset = 0;
 
-    const alphaFill = Math.max(0, 0.9 - (k * 0.25));
+    const alphaFill = Math.max(0, 0.9 - (consec * 0.25));
     const alphaStroke = (alphaFill / 0.9) * 0.75;
 
     for (let i = 0; i < lines.length; ++i) {
@@ -156,7 +153,9 @@ function draw(context, lines, k) {
         context.fillText((i + 1).toString(), lines[i][0][0] - offset, lines[i][0][1] - offset);
     }
 
-    context.strokeStyle = prevStrokeStyle;
+    context.strokeStyle = "hsl(0, 0%, 90%)";
+
+    h1.textContent = prompt;
 }
 
 function toPoints(svg, scale) {
@@ -186,8 +185,11 @@ function toPoints(svg, scale) {
 
 window.onload = function() {
     const canvas = document.getElementById("canvas");
-    const context = canvas.getContext("2d");
+    const h1 = document.getElementById("prompt");
     const h2 = document.getElementById("score");
+
+    const context = canvas.getContext("2d");
+    const rect = canvas.getBoundingClientRect();
 
     context.font = "16px monospace";
     context.textAlign = "center";
@@ -196,41 +198,47 @@ window.onload = function() {
     const canvasScale = Math.min(canvas.width, canvas.height);
     const scoreScale = Math.max(canvas.width, canvas.height) / 10;
 
-    const svg = document.getElementById("svg").contentDocument.children[0];
-    const character = svg.children[0].children[0].getAttribute("kvg:element");
+    let answer = [];
+    let character = "";
+    let prompt = "";
+    let consec = 0;
 
-    if (character === "干") {
-        document.getElementById("prompt").textContent = "sêco, ressecar";
-    } else if (character === "年") {
-        document.getElementById("prompt").textContent = "ano";
-    } else if (character === "乙") {
-        document.getElementById("prompt").textContent = "o último, duplicar, engenhoso, estranho";
-    } else if (character === "雨") {
-        document.getElementById("prompt").textContent = "chuva";
-    } else if (character === "折") {
-        document.getElementById("prompt").textContent =
-            "dobrar, quebrar, fraturar, curvar, produto, submeter";
-    } else if (character === "書") {
-        document.getElementById("prompt").textContent = "escrever";
-    } else if (character === "そ") {
-        document.getElementById("prompt").textContent = "\"so\" (hiragana)";
-    } else if (character === "ざ") {
-        document.getElementById("prompt").textContent = "\"za\" (hiragana)";
-    }
+    const next = function(body) {
+        fetch("/next", {
+            body: JSON.stringify(body),
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error(response.status.toString());
+                }
+                return response.json();
+            })
+            .then(function(json) {
+                const svg =
+                    (new DOMParser()).parseFromString(json.svg, "image/svg+xml").documentElement;
+                answer = toPoints(svg, canvasScale);
+                character = json.character;
+                prompt = json.prompt;
+                consec = json.consec;
 
-    const answer = toPoints(svg, canvasScale);
+                reset(canvas, context, answer, consec, h1, prompt);
+            });
+    };
 
-    let k = 0;
+    let correct = null;
 
-    reset(canvas, context);
-    draw(context, answer, k);
+    next({character, correct});
 
-    const rect = canvas.getBoundingClientRect();
-
-    let   drawing = false;
-    const strokes = [];
+    let drawing = false;
+    let strokes = [];
 
     canvas.addEventListener("mousedown", function(event) {
+        if (answer.length === 0) {
+            return;
+        }
+
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
 
@@ -251,38 +259,41 @@ window.onload = function() {
 
         drawing = false;
 
-        if (strokes.length === answer.length) {
-            const s = score(strokes, answer) / scoreScale;
-            if (s < 1) {
-                h2.textContent = `${character} \u2705 (${s.toFixed(2)})`;
-                ++k;
-            } else {
-                h2.textContent = `${character} \u274C (${s.toFixed(2)})`;
-                k = Math.max(0, Math.min(4, k - 1));
-            }
-
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            reset(canvas, context);
-            draw(context, answer, k);
-            strokes.length = 0;
+        if ((answer.length === 0) || (strokes.length !== answer.length)) {
+            return;
         }
+
+        const s = score(strokes, answer) / scoreScale;
+        if (s < 1) {
+            h2.textContent = `${character} \u2705 (${s.toFixed(2)})`;
+            next({character, correct});
+            correct = true;
+        } else {
+            h2.textContent = `${character} \u274C (${s.toFixed(2)})`;
+            reset(canvas, context, answer, 0, h1, prompt);
+            correct = false;
+        }
+
+        strokes = [];
     }, false);
 
     canvas.addEventListener("mousemove", function(event) {
-        if (drawing) {
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+        if (!drawing) {
+            return;
+        }
 
-            const n = strokes[strokes.length - 1].length;
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
 
-            if ((strokes[strokes.length - 1][n - 1][0] !== x) ||
-                (strokes[strokes.length - 1][n - 1][1] !== y))
-            {
-                context.lineTo(x, y);
-                context.stroke();
+        const n = strokes[strokes.length - 1].length;
 
-                strokes[strokes.length - 1].push([x, y]);
-            }
+        if ((strokes[strokes.length - 1][n - 1][0] !== x) ||
+            (strokes[strokes.length - 1][n - 1][1] !== y))
+        {
+            context.lineTo(x, y);
+            context.stroke();
+
+            strokes[strokes.length - 1].push([x, y]);
         }
     }, false);
 
@@ -291,12 +302,10 @@ window.onload = function() {
             return;
         }
 
-        if (event.key === "r") {
-            context.clearRect(0, 0, canvas.width, canvas.height);
+        if (event.key === "c") {
             h2.textContent = "";
-            reset(canvas, context);
-            draw(context, answer, k);
-            strokes.length = 0;
+            reset(canvas, context, answer, consec, h1, prompt);
+            strokes = [];
         }
     }, true);
 };
