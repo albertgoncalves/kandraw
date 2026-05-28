@@ -245,6 +245,7 @@ window.onload = function() {
         context.beginPath();
         context.moveTo(x, y);
 
+        correct = true;
         drawing = true;
         strokes.push([[x, y]]);
     }, false);
@@ -267,11 +268,11 @@ window.onload = function() {
         if (s < 1) {
             h2.textContent = `${character} \u2705 (${s.toFixed(2)})`;
             next({character, correct});
-            correct = true;
         } else {
             h2.textContent = `${character} \u274C (${s.toFixed(2)})`;
-            reset(canvas, context, answer, 0, h1, prompt);
+            consec = 0;
             correct = false;
+            reset(canvas, context, answer, consec, h1, prompt);
         }
 
         strokes = [];
