@@ -196,7 +196,7 @@ window.onload = function() {
     context.textBaseline = "middle";
 
     const canvasScale = Math.min(canvas.width, canvas.height);
-    const scoreScale = Math.max(canvas.width, canvas.height) / 10;
+    const scoreScale = Math.max(canvas.width, canvas.height) / 8;
 
     let answer = [];
     let character = null;
@@ -227,11 +227,12 @@ window.onload = function() {
             });
     };
 
-    let correct = null;
+    let correct = true;
 
     next({character, correct});
 
     let drawing = false;
+    let review = false;
     let strokes = [];
 
     canvas.addEventListener("mousedown", function(event) {
@@ -245,7 +246,6 @@ window.onload = function() {
         context.beginPath();
         context.moveTo(x, y);
 
-        correct = true;
         drawing = true;
         strokes.push([[x, y]]);
     }, false);
@@ -260,6 +260,14 @@ window.onload = function() {
 
         drawing = false;
 
+        if (review) {
+            next({character, correct});
+            correct = true;
+            review = false;
+            strokes = [];
+            return;
+        }
+
         if ((answer.length === 0) || (strokes.length !== answer.length)) {
             return;
         }
@@ -267,7 +275,24 @@ window.onload = function() {
         const s = score(strokes, answer) / scoreScale;
         if (s < 1) {
             h2.textContent = `${character} \u2705 (${s.toFixed(2)})`;
-            next({character, correct});
+            review = true;
+
+            reset(canvas, context, answer, 0, h1, prompt);
+
+            const prevStrokeStyle = context.strokeStyle;
+            context.strokeStyle = "hsl(0, 0%, 100%, 0.325)";
+
+            context.beginPath();
+            for (let stroke of strokes) {
+                context.moveTo(stroke[0][0], stroke[0][1]);
+                for (let point of stroke.slice(1)) {
+                    context.lineTo(point[0], point[1]);
+                }
+            }
+            context.stroke();
+
+            context.strokeStyle = prevStrokeStyle;
+
         } else {
             h2.textContent = `${character} \u274C (${s.toFixed(2)})`;
             consec = 0;
@@ -298,15 +323,15 @@ window.onload = function() {
         }
     }, false);
 
-    document.addEventListener("keyup", function(event) {
+    canvas.addEventListener("contextmenu", function(event) {
+        event.preventDefault();
+
         if (drawing) {
-            return;
+            context.stroke();
+            drawing = false;
         }
 
-        if (event.key === "c") {
-            h2.textContent = "";
-            reset(canvas, context, answer, consec, h1, prompt);
-            strokes = [];
-        }
+        reset(canvas, context, answer, consec, h1, prompt);
+        strokes = [];
     }, true);
 };

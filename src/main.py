@@ -37,6 +37,30 @@ else:
 APP = flask.Flask(__name__)
 KAKASI = pykakasi.kakasi()
 
+# fmt: off
+HIRAGANA = [
+    ("あ",  "a"), ("い",   "i"), ("う",   "u"), ("え",  "e"), ("お",  "o"),
+    ("か", "ka"), ("き",  "ki"), ("く",  "ku"), ("け", "ke"), ("こ", "ko"),
+  # ("が", "ga"), ("ぎ",  "gi"), ("ぐ",  "gu"), ("げ", "ge"), ("ご", "go"),
+    ("さ", "sa"), ("し", "shi"), ("す",  "su"), ("せ", "se"), ("そ", "so"),
+  # ("ざ", "za"), ("じ",  "ji"), ("ず",  "zu"), ("ぜ", "ze"), ("ぞ", "zo"),
+    ("た", "ta"), ("ち", "chi"), ("つ", "tsu"), ("て", "te"), ("と", "to"),
+  # ("だ", "da"), ("ぢ", "dzi"), ("づ", "dzu"), ("で", "de"), ("ど", "do"),
+    ("な", "na"), ("に",  "ni"), ("ぬ",  "nu"), ("ね", "ne"), ("の", "no"),
+    ("は", "ha"), ("ひ",  "hi"), ("ふ",  "fu"), ("へ", "he"), ("ほ", "ho"),
+  # ("ば", "ba"), ("び",  "bi"), ("ぶ",  "bu"), ("べ", "be"), ("ぼ", "bo"),
+  # ("ぱ", "pa"), ("ぴ",  "pi"), ("ぷ",  "pu"), ("ぺ", "pe"), ("ぽ", "po"),
+    ("ま", "ma"), ("み",  "mi"), ("む",  "mu"), ("め", "me"), ("も", "mo"),
+    ("や", "ya"),                ("ゆ",  "yu"),               ("よ", "yo"),
+    ("ら", "ra"), ("り",  "ri"), ("る",  "ru"), ("れ", "re"), ("ろ", "ro"),
+    ("わ", "wa"),                                             ("を", "wo"),
+
+    ("ん", "n"),
+]
+# fmt: on
+
+KATAKANA = [(KAKASI.convert(character)[0]["kana"], prompt) for (character, prompt) in HIRAGANA]
+
 
 @APP.route("/")
 def index():
@@ -57,40 +81,35 @@ def next():
         with open(PATH, "w") as file:
             json.dump(DATA, file)
 
-    # fmt: off
-    choices = [
-        ("あ",  "a"), ("い",   "i"), ("う",   "u"), ("え",  "e"), ("お",  "o"),
-        ("か", "ka"), ("き",  "ki"), ("く",  "ku"), ("け", "ke"), ("こ", "ko"),
-      # ("が", "ga"), ("ぎ",  "gi"), ("ぐ",  "gu"), ("げ", "ge"), ("ご", "go"),
-        ("さ", "sa"), ("し", "shi"), ("す",  "su"), ("せ", "se"), ("そ", "so"),
-      # ("ざ", "za"), ("じ",  "ji"), ("ず",  "zu"), ("ぜ", "ze"), ("ぞ", "zo"),
-        ("た", "ta"), ("ち", "chi"), ("つ", "tsu"), ("て", "te"), ("と", "to"),
-      # ("だ", "da"), ("ぢ", "dzi"), ("づ", "dzu"), ("で", "de"), ("ど", "do"),
-        ("な", "na"), ("に",  "ni"), ("ぬ",  "nu"), ("ね", "ne"), ("の", "no"),
-        ("は", "ha"), ("ひ",  "hi"), ("ふ",  "fu"), ("へ", "he"), ("ほ", "ho"),
-      # ("ば", "ba"), ("び",  "bi"), ("ぶ",  "bu"), ("べ", "be"), ("ぼ", "bo"),
-      # ("ぱ", "pa"), ("ぴ",  "pi"), ("ぷ",  "pu"), ("ぺ", "pe"), ("ぽ", "po"),
-        ("ま", "ma"), ("み",  "mi"), ("む",  "mu"), ("め", "me"), ("も", "mo"),
-        ("や", "ya"),                ("ゆ",  "yu"),               ("よ", "yo"),
-        ("ら", "ra"), ("り",  "ri"), ("る",  "ru"), ("れ", "re"), ("ろ", "ro"),
-        ("わ", "wa"),                                             ("を", "wo"),
+    weights = [DATA[character]["consec"] for character, _ in KATAKANA]
 
-        ("ん", "n"),
-    ]
-    # fmt: on
+    k = min(weights)
 
-    while True:
-        (hiragana, prompt) = random.choice(choices)
-        katakana = KAKASI.convert(hiragana)[0]["kana"]
-        if (body["character"] is None) or (katakana != body["character"]):
-            break
+    for i in range(len(weights)):
+        weights[i] = weights[i] - k
+
+    k = max(weights)
+
+    for i in range(len(weights)):
+        weights[i] = (k - weights[i]) + 1
+        weights[i] *= weights[i]
+
+    assert min(weights) == 1
+
+    if body["character"] is not None:
+        for i, (character, _) in enumerate(KATAKANA):
+            if character == body["character"]:
+                break
+        weights[i] = 0
+
+    (character, prompt) = random.choices(KATAKANA, weights=weights, k=1)[0]
 
     return {
         **{
-            "character": katakana,
+            "character": character,
             "prompt": f'"{prompt}" (katakana)',
         },
-        **DATA[katakana],
+        **DATA[character],
     }
 
 
