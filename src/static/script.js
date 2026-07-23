@@ -1,5 +1,10 @@
 "use strict";
 
+const RESET_X = 0;
+const RESET_Y = RESET_X;
+const RESET_WIDTH = 15;
+const RESET_HEIGHT = RESET_WIDTH;
+
 function distance(a, b) {
     return Math.sqrt(((a[0] - b[0]) ** 2) + ((a[1] - b[1]) ** 2));
 }
@@ -155,6 +160,11 @@ function reset(canvas, context, lines, consec, h1, prompt) {
 
     context.strokeStyle = "hsl(0, 0%, 90%)";
 
+    context.beginPath();
+    context.fillStyle = "hsl(345, 100%, 65%, 0.425)";
+    context.rect(RESET_X, RESET_Y, RESET_WIDTH, RESET_HEIGHT);
+    context.fill();
+
     h1.textContent = prompt;
 }
 
@@ -181,6 +191,26 @@ function toPoints(svg, scale) {
     }
 
     return lines;
+}
+
+function pushPoint(context, rect, strokes, event) {
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const point = [x, y];
+
+    const n = strokes[strokes.length - 1].length;
+
+    if ((strokes[strokes.length - 1][n - 1][0] !== x) ||
+        (strokes[strokes.length - 1][n - 1][1] !== y))
+    {
+        context.lineTo(x, y);
+        context.stroke();
+
+        strokes[strokes.length - 1].push(point);
+    }
+
+    return point;
 }
 
 window.onload = function() {
@@ -254,16 +284,22 @@ window.onload = function() {
         if (!drawing) {
             return;
         }
-
-        context.lineTo(event.clientX - rect.left, event.clientY - rect.top);
-        context.stroke();
-
         drawing = false;
+
+        const [x, y] = pushPoint(context, rect, strokes, event);
 
         if (review) {
             next({character, correct});
             correct = true;
             review = false;
+            strokes = [];
+            return;
+        }
+
+        if ((RESET_X <= x) && (RESET_Y <= y) && (x < (RESET_X + RESET_WIDTH)) &&
+            (y < (RESET_Y + RESET_HEIGHT)))
+        {
+            reset(canvas, context, answer, consec, h1, prompt);
             strokes = [];
             return;
         }
@@ -292,7 +328,6 @@ window.onload = function() {
             context.stroke();
 
             context.strokeStyle = prevStrokeStyle;
-
         } else {
             h2.textContent = `${character} \u274C (${s.toFixed(2)})`;
             consec = 0;
@@ -307,31 +342,6 @@ window.onload = function() {
         if (!drawing) {
             return;
         }
-
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        const n = strokes[strokes.length - 1].length;
-
-        if ((strokes[strokes.length - 1][n - 1][0] !== x) ||
-            (strokes[strokes.length - 1][n - 1][1] !== y))
-        {
-            context.lineTo(x, y);
-            context.stroke();
-
-            strokes[strokes.length - 1].push([x, y]);
-        }
+        pushPoint(context, rect, strokes, event);
     }, false);
-
-    canvas.addEventListener("contextmenu", function(event) {
-        event.preventDefault();
-
-        if (drawing) {
-            context.stroke();
-            drawing = false;
-        }
-
-        reset(canvas, context, answer, consec, h1, prompt);
-        strokes = [];
-    }, true);
 };
