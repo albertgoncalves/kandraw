@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import random
+import threading
 
 from lxml import etree
 
@@ -13,6 +14,21 @@ import flask
 import pykakasi
 
 PATH = "data.json"
+
+
+def save(data):
+    temp = f"{PATH}.tmp"
+
+    with open(temp, "w") as file:
+        json.dump(data, file)
+        # NOTE: Move the data from Python's buffer (`flush`) and the OS's cache (`fsync`) to disk
+        # before the rename; otherwise a power loss could persist the rename but not the data.
+        file.flush()
+        os.fsync(file.fileno())
+
+    # NOTE: `os.replace` is atomic, so an interrupted write can't leave `PATH` truncated.
+    os.replace(temp, PATH)
+
 
 if os.path.exists(PATH):
     with open(PATH, "r") as file:
@@ -31,8 +47,7 @@ else:
                 "consec": 0,
             }
 
-    with open(PATH, "w") as file:
-        json.dump(DATA, file)
+    save(DATA)
 
 APP = flask.Flask(__name__)
 KAKASI = pykakasi.kakasi()
@@ -60,6 +75,10 @@ HIRAGANA = [
 # fmt: on
 
 KATAKANA = [(KAKASI.convert(character)[0]["kana"], prompt) for (character, prompt) in HIRAGANA]
+INDICES = {character: i for i, (character, _) in enumerate(KATAKANA)}
+
+# NOTE: Flask serves requests on multiple threads; this keeps concurrent updates from interleaving.
+LOCK = threading.Lock()
 
 
 @APP.route("/")
@@ -67,19 +86,28 @@ def index():
     return flask.render_template("index.html")
 
 
-@APP.route("/next", methods=["POST"])
-def next():
+@APP.route("/next-character", methods=["POST"])
+def next_character():
     body = flask.request.get_json()
 
-    if body["character"] is not None:
-        key = body["character"]
-        if body["correct"]:
-            DATA[key]["consec"] += 1
-        else:
-            DATA[key]["consec"] = max(0, min(4, DATA[key]["consec"] - 1))
+    if not isinstance(body, dict):
+        flask.abort(400)
 
-        with open(PATH, "w") as file:
-            json.dump(DATA, file)
+    key = body.get("character")
+
+    if key is not None:
+        if (not isinstance(key, str)) or (key not in INDICES):
+            flask.abort(400)
+        if not isinstance(body.get("correct"), bool):
+            flask.abort(400)
+
+        with LOCK:
+            if body["correct"]:
+                DATA[key]["consec"] += 1
+            else:
+                DATA[key]["consec"] = max(0, min(4, DATA[key]["consec"] - 1))
+
+            save(DATA)
 
     weights = [DATA[character]["consec"] for character, _ in KATAKANA]
 
@@ -96,11 +124,8 @@ def next():
 
     assert min(weights) == 1
 
-    if body["character"] is not None:
-        for i, (character, _) in enumerate(KATAKANA):
-            if character == body["character"]:
-                break
-        weights[i] = 0
+    if key is not None:
+        weights[INDICES[key]] = 0
 
     (character, prompt) = random.choices(KATAKANA, weights=weights, k=1)[0]
 

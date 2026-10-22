@@ -183,13 +183,33 @@ function toPoints(svg, scale) {
     return lines;
 }
 
+function toCanvas(canvas, event) {
+    // NOTE: The rect moves whenever the page is resized or scrolled, and includes the border.
+    const rect = canvas.getBoundingClientRect();
+
+    return [
+        (event.clientX - rect.left) - canvas.clientLeft,
+        (event.clientY - rect.top) - canvas.clientTop,
+    ];
+}
+
+function pushPoint(context, stroke, point) {
+    const n = stroke.length;
+
+    if ((stroke[n - 1][0] !== point[0]) || (stroke[n - 1][1] !== point[1])) {
+        context.lineTo(point[0], point[1]);
+        context.stroke();
+
+        stroke.push(point);
+    }
+}
+
 window.onload = function() {
     const canvas = document.getElementById("canvas");
     const h1 = document.getElementById("prompt");
     const h2 = document.getElementById("score");
 
     const context = canvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
 
     context.font = "16px monospace";
     context.textAlign = "center";
@@ -204,7 +224,10 @@ window.onload = function() {
     let consec = 0;
 
     const next = function(body) {
-        fetch("/next", {
+        // NOTE: Ignore input until the next character arrives.
+        answer = [];
+
+        fetch("/next-character", {
             body: JSON.stringify(body),
             method: "POST",
             headers: {"Content-Type": "application/json"}
@@ -224,6 +247,10 @@ window.onload = function() {
                 consec = json.consec;
 
                 reset(canvas, context, answer, consec, h1, prompt);
+            })
+            .catch(function(error) {
+                console.error(error);
+                h2.textContent = `error: ${error.message} (reload to retry)`;
             });
     };
 
@@ -235,36 +262,48 @@ window.onload = function() {
     let review = false;
     let strokes = [];
 
-    canvas.addEventListener("mousedown", function(event) {
-        if (answer.length === 0) {
+    const clear = function() {
+        drawing = false;
+        reset(canvas, context, answer, consec, h1, prompt);
+        strokes = [];
+    };
+
+    canvas.addEventListener("pointerdown", function(event) {
+        if ((!event.isPrimary) || (event.button !== 0) || (answer.length === 0)) {
             return;
         }
 
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        // NOTE: Keep receiving events (including `pointerup`) after the pointer leaves the canvas.
+        canvas.setPointerCapture(event.pointerId);
+
+        const point = toCanvas(canvas, event);
 
         context.beginPath();
-        context.moveTo(x, y);
+        context.moveTo(point[0], point[1]);
 
         drawing = true;
-        strokes.push([[x, y]]);
+        strokes.push([point]);
     }, false);
 
-    canvas.addEventListener("mouseup", function(event) {
-        if (!drawing) {
+    canvas.addEventListener("pointerup", function(event) {
+        if ((!event.isPrimary) || (!drawing)) {
             return;
         }
-
-        context.lineTo(event.clientX - rect.left, event.clientY - rect.top);
-        context.stroke();
-
         drawing = false;
+
+        pushPoint(context, strokes[strokes.length - 1], toCanvas(canvas, event));
 
         if (review) {
             next({character, correct});
             correct = true;
             review = false;
             strokes = [];
+            return;
+        }
+
+        // NOTE: A click without any movement isn't a stroke.
+        if (strokes[strokes.length - 1].length === 1) {
+            strokes.pop();
             return;
         }
 
@@ -303,35 +342,22 @@ window.onload = function() {
         strokes = [];
     }, false);
 
-    canvas.addEventListener("mousemove", function(event) {
-        if (!drawing) {
+    canvas.addEventListener("pointermove", function(event) {
+        if ((!event.isPrimary) || (!drawing)) {
             return;
         }
+        pushPoint(context, strokes[strokes.length - 1], toCanvas(canvas, event));
+    }, false);
 
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        const n = strokes[strokes.length - 1].length;
-
-        if ((strokes[strokes.length - 1][n - 1][0] !== x) ||
-            (strokes[strokes.length - 1][n - 1][1] !== y))
-        {
-            context.lineTo(x, y);
-            context.stroke();
-
-            strokes[strokes.length - 1].push([x, y]);
+    canvas.addEventListener("pointercancel", function(event) {
+        if ((!event.isPrimary) || (!drawing)) {
+            return;
         }
+        clear();
     }, false);
 
     canvas.addEventListener("contextmenu", function(event) {
         event.preventDefault();
-
-        if (drawing) {
-            context.stroke();
-            drawing = false;
-        }
-
-        reset(canvas, context, answer, consec, h1, prompt);
-        strokes = [];
+        clear();
     }, true);
 };
