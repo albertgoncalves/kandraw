@@ -183,6 +183,16 @@ function toPoints(svg, scale) {
     return lines;
 }
 
+function toCanvas(canvas, event) {
+    // NOTE: The rect moves whenever the page is resized or scrolled, and includes the border.
+    const rect = canvas.getBoundingClientRect();
+
+    return [
+        (event.clientX - rect.left) - canvas.clientLeft,
+        (event.clientY - rect.top) - canvas.clientTop,
+    ];
+}
+
 function pushPoint(context, stroke, point) {
     const n = stroke.length;
 
@@ -200,7 +210,6 @@ window.onload = function() {
     const h2 = document.getElementById("score");
 
     const context = canvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
 
     context.font = "16px monospace";
     context.textAlign = "center";
@@ -251,14 +260,13 @@ window.onload = function() {
             return;
         }
 
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const point = toCanvas(canvas, event);
 
         context.beginPath();
-        context.moveTo(x, y);
+        context.moveTo(point[0], point[1]);
 
         drawing = true;
-        strokes.push([[x, y]]);
+        strokes.push([point]);
     }, false);
 
     canvas.addEventListener("mouseup", function(event) {
@@ -266,7 +274,9 @@ window.onload = function() {
             return;
         }
 
-        context.lineTo(event.clientX - rect.left, event.clientY - rect.top);
+        const point = toCanvas(canvas, event);
+
+        context.lineTo(point[0], point[1]);
         context.stroke();
 
         drawing = false;
@@ -318,11 +328,7 @@ window.onload = function() {
         if (!drawing) {
             return;
         }
-
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        pushPoint(context, strokes[strokes.length - 1], [x, y]);
+        pushPoint(context, strokes[strokes.length - 1], toCanvas(canvas, event));
     }, false);
 
     canvas.addEventListener("contextmenu", function(event) {
