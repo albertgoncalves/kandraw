@@ -255,10 +255,13 @@ window.onload = function() {
     let review = false;
     let strokes = [];
 
-    canvas.addEventListener("mousedown", function(event) {
+    canvas.addEventListener("pointerdown", function(event) {
         if (answer.length === 0) {
             return;
         }
+
+        // NOTE: Keep receiving events (including `pointerup`) after the pointer leaves the canvas.
+        canvas.setPointerCapture(event.pointerId);
 
         const point = toCanvas(canvas, event);
 
@@ -269,7 +272,7 @@ window.onload = function() {
         strokes.push([point]);
     }, false);
 
-    canvas.addEventListener("mouseup", function(event) {
+    canvas.addEventListener("pointerup", function(event) {
         if (!drawing) {
             return;
         }
@@ -324,7 +327,7 @@ window.onload = function() {
         strokes = [];
     }, false);
 
-    canvas.addEventListener("mousemove", function(event) {
+    canvas.addEventListener("pointermove", function(event) {
         if (!drawing) {
             return;
         }
