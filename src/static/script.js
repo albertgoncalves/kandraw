@@ -262,7 +262,7 @@ window.onload = function() {
     };
 
     canvas.addEventListener("pointerdown", function(event) {
-        if ((!event.isPrimary) || (answer.length === 0)) {
+        if ((!event.isPrimary) || (event.button !== 0) || (answer.length === 0)) {
             return;
         }
 
