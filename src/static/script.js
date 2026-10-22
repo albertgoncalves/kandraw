@@ -255,8 +255,14 @@ window.onload = function() {
     let review = false;
     let strokes = [];
 
+    const clear = function() {
+        drawing = false;
+        reset(canvas, context, answer, consec, h1, prompt);
+        strokes = [];
+    };
+
     canvas.addEventListener("pointerdown", function(event) {
-        if (answer.length === 0) {
+        if ((!event.isPrimary) || (answer.length === 0)) {
             return;
         }
 
@@ -273,7 +279,7 @@ window.onload = function() {
     }, false);
 
     canvas.addEventListener("pointerup", function(event) {
-        if (!drawing) {
+        if ((!event.isPrimary) || (!drawing)) {
             return;
         }
 
@@ -328,21 +334,21 @@ window.onload = function() {
     }, false);
 
     canvas.addEventListener("pointermove", function(event) {
-        if (!drawing) {
+        if ((!event.isPrimary) || (!drawing)) {
             return;
         }
         pushPoint(context, strokes[strokes.length - 1], toCanvas(canvas, event));
     }, false);
 
+    canvas.addEventListener("pointercancel", function(event) {
+        if ((!event.isPrimary) || (!drawing)) {
+            return;
+        }
+        clear();
+    }, false);
+
     canvas.addEventListener("contextmenu", function(event) {
         event.preventDefault();
-
-        if (drawing) {
-            context.stroke();
-            drawing = false;
-        }
-
-        reset(canvas, context, answer, consec, h1, prompt);
-        strokes = [];
+        clear();
     }, true);
 };
