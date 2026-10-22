@@ -247,6 +247,10 @@ window.onload = function() {
                 consec = json.consec;
 
                 reset(canvas, context, answer, consec, h1, prompt);
+            })
+            .catch(function(error) {
+                console.error(error);
+                h2.textContent = `error: ${error.message} (reload to retry)`;
             });
     };
 
