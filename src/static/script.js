@@ -282,19 +282,21 @@ window.onload = function() {
         if ((!event.isPrimary) || (!drawing)) {
             return;
         }
-
-        const point = toCanvas(canvas, event);
-
-        context.lineTo(point[0], point[1]);
-        context.stroke();
-
         drawing = false;
+
+        pushPoint(context, strokes[strokes.length - 1], toCanvas(canvas, event));
 
         if (review) {
             next({character, correct});
             correct = true;
             review = false;
             strokes = [];
+            return;
+        }
+
+        // NOTE: A click without any movement isn't a stroke.
+        if (strokes[strokes.length - 1].length === 1) {
+            strokes.pop();
             return;
         }
 
