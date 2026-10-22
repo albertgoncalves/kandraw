@@ -227,7 +227,7 @@ window.onload = function() {
         // NOTE: Ignore input until the next character arrives.
         answer = [];
 
-        fetch("/next", {
+        fetch("/next-character", {
             body: JSON.stringify(body),
             method: "POST",
             headers: {"Content-Type": "application/json"}

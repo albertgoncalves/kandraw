@@ -86,7 +86,7 @@ def index():
     return flask.render_template("index.html")
 
 
-@APP.route("/next", methods=["POST"])
+@APP.route("/next-character", methods=["POST"])
 def next_character():
     body = flask.request.get_json()
 
