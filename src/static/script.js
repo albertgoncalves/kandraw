@@ -224,6 +224,9 @@ window.onload = function() {
     let consec = 0;
 
     const next = function(body) {
+        // NOTE: Ignore input until the next character arrives.
+        answer = [];
+
         fetch("/next", {
             body: JSON.stringify(body),
             method: "POST",
