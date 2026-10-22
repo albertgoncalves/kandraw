@@ -14,6 +14,21 @@ import pykakasi
 
 PATH = "data.json"
 
+
+def save(data):
+    temp = f"{PATH}.tmp"
+
+    with open(temp, "w") as file:
+        json.dump(data, file)
+        # NOTE: Move the data from Python's buffer (`flush`) and the OS's cache (`fsync`) to disk
+        # before the rename; otherwise a power loss could persist the rename but not the data.
+        file.flush()
+        os.fsync(file.fileno())
+
+    # NOTE: `os.replace` is atomic, so an interrupted write can't leave `PATH` truncated.
+    os.replace(temp, PATH)
+
+
 if os.path.exists(PATH):
     with open(PATH, "r") as file:
         DATA = json.load(file)
@@ -31,8 +46,7 @@ else:
                 "consec": 0,
             }
 
-    with open(PATH, "w") as file:
-        json.dump(DATA, file)
+    save(DATA)
 
 APP = flask.Flask(__name__)
 KAKASI = pykakasi.kakasi()
@@ -78,8 +92,7 @@ def next():
         else:
             DATA[key]["consec"] = max(0, min(4, DATA[key]["consec"] - 1))
 
-        with open(PATH, "w") as file:
-            json.dump(DATA, file)
+        save(DATA)
 
     weights = [DATA[character]["consec"] for character, _ in KATAKANA]
 
