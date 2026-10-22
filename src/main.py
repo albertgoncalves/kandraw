@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import random
+import threading
 
 from lxml import etree
 
@@ -75,6 +76,9 @@ HIRAGANA = [
 
 KATAKANA = [(KAKASI.convert(character)[0]["kana"], prompt) for (character, prompt) in HIRAGANA]
 
+# NOTE: Flask serves requests on multiple threads; this keeps concurrent updates from interleaving.
+LOCK = threading.Lock()
+
 
 @APP.route("/")
 def index():
@@ -87,12 +91,14 @@ def next():
 
     if body["character"] is not None:
         key = body["character"]
-        if body["correct"]:
-            DATA[key]["consec"] += 1
-        else:
-            DATA[key]["consec"] = max(0, min(4, DATA[key]["consec"] - 1))
 
-        save(DATA)
+        with LOCK:
+            if body["correct"]:
+                DATA[key]["consec"] += 1
+            else:
+                DATA[key]["consec"] = max(0, min(4, DATA[key]["consec"] - 1))
+
+            save(DATA)
 
     weights = [DATA[character]["consec"] for character, _ in KATAKANA]
 
