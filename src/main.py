@@ -75,6 +75,7 @@ HIRAGANA = [
 # fmt: on
 
 KATAKANA = [(KAKASI.convert(character)[0]["kana"], prompt) for (character, prompt) in HIRAGANA]
+INDICES = {character: i for i, (character, _) in enumerate(KATAKANA)}
 
 # NOTE: Flask serves requests on multiple threads; this keeps concurrent updates from interleaving.
 LOCK = threading.Lock()
@@ -89,8 +90,16 @@ def index():
 def next():
     body = flask.request.get_json()
 
-    if body["character"] is not None:
-        key = body["character"]
+    if not isinstance(body, dict):
+        flask.abort(400)
+
+    key = body.get("character")
+
+    if key is not None:
+        if (not isinstance(key, str)) or (key not in INDICES):
+            flask.abort(400)
+        if not isinstance(body.get("correct"), bool):
+            flask.abort(400)
 
         with LOCK:
             if body["correct"]:
@@ -115,11 +124,8 @@ def next():
 
     assert min(weights) == 1
 
-    if body["character"] is not None:
-        for i, (character, _) in enumerate(KATAKANA):
-            if character == body["character"]:
-                break
-        weights[i] = 0
+    if key is not None:
+        weights[INDICES[key]] = 0
 
     (character, prompt) = random.choices(KATAKANA, weights=weights, k=1)[0]
 
