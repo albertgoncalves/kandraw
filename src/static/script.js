@@ -183,6 +183,17 @@ function toPoints(svg, scale) {
     return lines;
 }
 
+function pushPoint(context, stroke, point) {
+    const n = stroke.length;
+
+    if ((stroke[n - 1][0] !== point[0]) || (stroke[n - 1][1] !== point[1])) {
+        context.lineTo(point[0], point[1]);
+        context.stroke();
+
+        stroke.push(point);
+    }
+}
+
 window.onload = function() {
     const canvas = document.getElementById("canvas");
     const h1 = document.getElementById("prompt");
@@ -311,16 +322,7 @@ window.onload = function() {
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
 
-        const n = strokes[strokes.length - 1].length;
-
-        if ((strokes[strokes.length - 1][n - 1][0] !== x) ||
-            (strokes[strokes.length - 1][n - 1][1] !== y))
-        {
-            context.lineTo(x, y);
-            context.stroke();
-
-            strokes[strokes.length - 1].push([x, y]);
-        }
+        pushPoint(context, strokes[strokes.length - 1], [x, y]);
     }, false);
 
     canvas.addEventListener("contextmenu", function(event) {
