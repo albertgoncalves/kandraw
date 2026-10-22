@@ -87,7 +87,7 @@ def index():
 
 
 @APP.route("/next", methods=["POST"])
-def next():
+def next_character():
     body = flask.request.get_json()
 
     if not isinstance(body, dict):
